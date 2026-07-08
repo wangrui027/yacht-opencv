@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import logging.handlers
+import os
 import threading
 import time
 from pathlib import Path
@@ -24,7 +26,7 @@ from yacht_opencv.config import (
     TEMPLATE_TEXT_MAP,
 )
 from yacht_opencv.matcher import Template, load_templates, match_templates
-from yacht_opencv.notifier import speak
+from yacht_opencv.notifier import clear_cache, speak
 from yacht_opencv.overlay import create_overlay, destroy_overlay, show_overlay
 from yacht_opencv.screen import capture_screen
 from yacht_opencv.settings import VOICES, load as load_settings, save as save_settings
@@ -119,8 +121,10 @@ def _set_tts_voice(voice_id: str) -> None:
 def _create_voice_item(name: str, vid: str) -> pystray.MenuItem:
     def action(_icon: object = None) -> None:
         _set_tts_voice(vid)
+
     def checked(_item: object = None) -> bool:
         return _tts_voice == vid
+
     return pystray.MenuItem(name, action, checked=checked)
 
 
@@ -128,9 +132,10 @@ def _build_menu() -> pystray.Menu:
     voice_items = [_create_voice_item(name, vid) for name, vid in VOICES.items()]
     return pystray.Menu(
         pystray.MenuItem("检测框", _toggle_overlay, checked=lambda _: _overlay_box_on),
-        pystray.MenuItem("重置检测框", _reset_anchor),
+        pystray.MenuItem("检测框重置", _reset_anchor),
         pystray.MenuItem("保存截图", _toggle_save, checked=lambda _: _save_screenshot_on),
-        pystray.MenuItem("音色", pystray.Menu(*voice_items)),
+        pystray.MenuItem("音色选择", pystray.Menu(*voice_items)),
+        pystray.MenuItem("清除缓存", lambda _: clear_cache()),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("退出", lambda icon: (_stop_monitoring(), icon.stop())),
     )
@@ -281,17 +286,67 @@ def _stop_monitoring(*_args: object) -> None:
     logger.info("已停止监控")
 
 
+# ── 单实例保护（杀旧留新）───────────────────────────────
+import subprocess
+
+
+def _enforce_single_instance() -> None:
+    """杀掉其他同名进程，只保留当前实例。"""
+    my_pid = os.getpid()
+    result = subprocess.run(
+        "tasklist /fo csv /nh",
+        capture_output=True, text=True, shell=True,
+    )
+    for line in result.stdout.strip().split("\n"):
+        if not line.strip():
+            continue
+        parts = [p.strip().strip('"') for p in line.split(",")]
+        if len(parts) >= 2 and "yacht-opencv" in parts[0].lower():
+            try:
+                pid = int(parts[1])
+            except (ValueError, IndexError):
+                continue
+            if pid != my_pid:
+                try:
+                    os.kill(pid, 9)
+                    logger.info("已终止旧实例 PID=%d", pid)
+                except (OSError, ProcessLookupError):
+                    pass
+
+
 # ── 托盘入口 ──────────────────────────────────────────
 def run_tray() -> None:
+    _enforce_single_instance()
+    log_dir = Path.cwd() / "logs"
+    log_dir.mkdir(exist_ok=True)
+
+    # 文件日志（每天轮转，保留 30 天）
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        log_dir / "yacht-opencv.log", when="midnight", encoding="utf-8", backupCount=30,
+    )
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    ))
+
+    # 控制台日志
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    ))
+
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%H:%M:%S",
+        handlers=[file_handler, console_handler],
     )
+
+    logger.info("程序启动 PID=%d", os.getpid())
 
     _load_all_settings()
 
-    icon_image = Image.open(Path(LOGO_PATH)) if Path(LOGO_PATH).is_file() else Image.new("RGBA", (64, 64), (0, 120, 215, 255))
+    icon_image = Image.open(Path(LOGO_PATH)) if Path(LOGO_PATH).is_file() else Image.new("RGBA", (64, 64),
+                                                                                         (0, 120, 215, 255))
 
     # 启动后如果之前开启了检测框则创建叠层
     if _overlay_box_on:

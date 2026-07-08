@@ -44,9 +44,9 @@ def load_templates() -> list[Template]:
 
 
 def match_templates(
-    screen: np.ndarray,
-    templates: list[Template],
-    threshold: float = TEMPLATE_MATCH_THRESHOLD,
+        screen: np.ndarray,
+        templates: list[Template],
+        threshold: float = TEMPLATE_MATCH_THRESHOLD,
 ) -> list[dict]:
     """在截图中查找所有匹配的模板。
 

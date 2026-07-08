@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import numpy as np
 import mss
+import numpy as np
 
 
 def capture_screen(bbox: tuple[int, int, int, int] | None = None) -> np.ndarray:

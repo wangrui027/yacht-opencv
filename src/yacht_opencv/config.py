@@ -3,6 +3,7 @@
 import sys
 from pathlib import Path
 
+
 # ── 路径 ──────────────────────────────────────────────
 def _base_path() -> Path:
     if getattr(sys, "frozen", False):
@@ -25,10 +26,6 @@ ANCHOR_CROP_H = 60
 # ── 首次搜索 ──────────────────────────────────────────
 # True=右下1/4区域搜索，False=全屏搜索（发现锚点后自动切换到240x60）
 CAPTURE_BOTTOM_RIGHT = True
-# ── MP3 语音服务 ──────────────────────────────────────
-MP3_SERVER_URL = "http://localhost:8826/play"
-MP3_TIMEOUT = 3.0
-
 # ── 状态 → 播报文本映射 ──────────────────────────────
 TEMPLATE_TEXT_MAP: dict[str, str] = {
     "投色子": "投色子",

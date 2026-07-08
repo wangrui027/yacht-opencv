@@ -1,15 +1,14 @@
-"""持久化配置 —— 保存/读取用户设置到 APPDATA。"""
+"""持久化配置 —— 保存/读取用户设置到用户目录。"""
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-SETTINGS_DIR = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming")) / "yacht-opencv"
+SETTINGS_DIR = Path.home() / "yacht-opencv"
 SETTINGS_FILE = SETTINGS_DIR / "settings.json"
 
 DEFAULT = {

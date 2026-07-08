@@ -31,7 +31,7 @@ def _wndproc(hwnd: int, msg: int, wparam: int, lparam: int) -> int:
 
 
 def _paint(hwnd: int) -> None:
-    """绘制：黑色背景（透明）上画 2px 红色矩形边框。"""
+    """绘制：黑色背景（透明）上画 2px 红色矩形边框，四边严格等宽。"""
     hdc, ps = win32gui.BeginPaint(hwnd)
     try:
         _, _, right, bottom = win32gui.GetClientRect(hwnd)
@@ -40,17 +40,19 @@ def _paint(hwnd: int) -> None:
         black_brush = win32gui.GetStockObject(win32con.BLACK_BRUSH)
         win32gui.FillRect(hdc, (0, 0, right, bottom), black_brush)
 
-        # 画红色矩形边框
-        pen = win32gui.CreatePen(win32con.PS_SOLID, 2, win32api.RGB(255, 0, 0))
-        old_pen = win32gui.SelectObject(hdc, pen)
-        null_brush = win32gui.GetStockObject(win32con.NULL_BRUSH)
-        old_brush = win32gui.SelectObject(hdc, null_brush)
+        # 四条边用填充矩形绘制，避免 GDI 画笔居中导致的边缘不对称
+        red_brush = win32gui.CreateSolidBrush(win32api.RGB(255, 0, 0))
+        old_brush = win32gui.SelectObject(hdc, red_brush)
 
-        win32gui.Rectangle(hdc, 0, 0, right, bottom)
+        # 上边 (0,0)-(w,2)    下边 (0,h-2)-(w,h)
+        # 左边 (0,0)-(2,h)    右边 (w-2,0)-(w,h)
+        win32gui.FillRect(hdc, (0, 0, right, 2), red_brush)
+        win32gui.FillRect(hdc, (0, bottom - 2, right, bottom), red_brush)
+        win32gui.FillRect(hdc, (0, 0, 2, bottom), red_brush)
+        win32gui.FillRect(hdc, (right - 2, 0, right, bottom), red_brush)
 
-        win32gui.SelectObject(hdc, old_pen)
         win32gui.SelectObject(hdc, old_brush)
-        win32gui.DeleteObject(pen)
+        win32gui.DeleteObject(red_brush)
     finally:
         win32gui.EndPaint(hwnd, ps)
 
@@ -74,10 +76,10 @@ def create_overlay() -> int | None:
         _class_atom = win32gui.RegisterClass(wc)
 
     ex_style = (
-        win32con.WS_EX_TRANSPARENT
-        | win32con.WS_EX_LAYERED
-        | win32con.WS_EX_TOPMOST
-        | win32con.WS_EX_TOOLWINDOW
+            win32con.WS_EX_TRANSPARENT
+            | win32con.WS_EX_LAYERED
+            | win32con.WS_EX_TOPMOST
+            | win32con.WS_EX_TOOLWINDOW
     )
     hwnd = win32gui.CreateWindowEx(
         ex_style,
