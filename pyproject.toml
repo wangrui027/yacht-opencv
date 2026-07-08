@@ -1,0 +1,22 @@
+[project]
+name = "yacht-opencv"
+version = "0.1.0"
+description = "游艇骰子 CV 助手 - 基于 OpenCV 的屏幕识别 + 语音通知"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mss>=10.2.0",
+    "opencv-python>=5.0.0.93",
+    "pillow>=12.3.0",
+    "pystray>=0.19.5",
+    "pywin32>=312",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+yacht-opencv = "yacht_opencv:main"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+]
