@@ -90,6 +90,8 @@ fi
 
 $UV run pyinstaller "${PYINSTALLER_ARGS[@]}" "$ENTRY"
 
+# 终止运行中的旧程序，否则 rm 会权限失败
+taskkill -f -im "$APP_NAME.exe" 2>/dev/null || true
 
 cd 'D:\Program Files\yacht-opencv' && rm _internal yacht-opencv.exe -rf
 cd "$SCRIPT_DIR" && cp -a dist/yacht-opencv/* 'D:\Program Files\yacht-opencv'
