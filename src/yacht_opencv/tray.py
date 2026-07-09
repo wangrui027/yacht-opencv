@@ -10,6 +10,8 @@ import threading
 import time
 from pathlib import Path
 
+import webbrowser
+
 import cv2
 import pystray
 import win32api
@@ -131,8 +133,10 @@ def _create_voice_item(name: str, vid: str) -> pystray.MenuItem:
 def _build_menu() -> pystray.Menu:
     voice_items = [_create_voice_item(name, vid) for name, vid in VOICES.items()]
     return pystray.Menu(
-        pystray.MenuItem("检测框", _toggle_overlay, checked=lambda _: _overlay_box_on),
-        pystray.MenuItem("检测框重置", _reset_anchor),
+        pystray.MenuItem("打开游戏", lambda _: webbrowser.open("https://bloob.io/zh/yacht")),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("显示检测框", _toggle_overlay, checked=lambda _: _overlay_box_on),
+        pystray.MenuItem("重置检测框", _reset_anchor),
         pystray.MenuItem("保存截图", _toggle_save, checked=lambda _: _save_screenshot_on),
         pystray.MenuItem("音色选择", pystray.Menu(*voice_items)),
         pystray.MenuItem("清除缓存", lambda _: clear_cache()),
