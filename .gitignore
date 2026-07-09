@@ -20,3 +20,5 @@ Thumbs.db
 .DS_Store
 
 **/screenshots/
+logs/
+temp/

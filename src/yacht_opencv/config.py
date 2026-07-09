@@ -28,7 +28,6 @@ ANCHOR_CROP_H = 60
 CAPTURE_BOTTOM_RIGHT = True
 # ── 状态 → 播报文本映射 ──────────────────────────────
 TEMPLATE_TEXT_MAP: dict[str, str] = {
-    "对方行动": "wait",
     "三": "3",
     "二": "2",
     "一": "1",
